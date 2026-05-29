@@ -8,40 +8,37 @@ Date: 2026-05-26
 =======================================================
 */
 
-CREATE TABLE IF NOT EXISTS [PC_Sales_Staging_dtw].[dbo].[dim_customer](
-    [Customer_ID] int identity (1, 1) primary key,
-    [Customer_Name] [nvarchar](50) NOT NULL,
-    [Customer_Surname] [nvarchar](50) NOT NULL,
-    [Customer_Contact_Number] [nvarchar](50) NOT NULL,
-    [Customer_Email_Address] [nvarchar](50) NOT NULL,
-    [Sales_Person_Name] [nvarchar](50) NOT NULL,
-    [Sales_Person_Department] [nvarchar](50) NOT NULL,
-    [Load_date] DATETIME DEFAULT GETDATE()
-)
+-- Drop and recreate if exists
+IF OBJECT_ID('[PC_Sales_Staging_dtw].[dbo].[dim_customer]', 'U') IS NOT NULL
+    DROP TABLE [PC_Sales_Staging_dtw].[dbo].[dim_customer];
 
--- Insert distinct customer records from raw data
--- Load unique customers into dimension table
-INSERT INTO
-    [PC_Sales_Staging_dtw].[dbo].[dim_customer](
-        [Customer_Name],
-        [Customer_Surname],
-        [Customer_Contact_Number],
-        [Customer_Email_Address],
-        [Sales_Person_Name],
-        [Sales_Person_Department]
-    )
-SELECT
-    DISTINCT [Customer_Name],
+CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[dim_customer] (
+    [Customer_Key]   INT IDENTITY(1,1) PRIMARY KEY,
+    [First_Name]     NVARCHAR(50)  NOT NULL,
+    [Last_Name]      NVARCHAR(50)  NOT NULL,
+    [Contact_Number] NVARCHAR(50)  NOT NULL,
+    [Email_Address]  NVARCHAR(100) NOT NULL,
+    [Credit_Score]   NVARCHAR(50)  NOT NULL,
+    [Priority]       NVARCHAR(50)  NOT NULL
+);
+
+-- Insert distinct customer records from staging
+INSERT INTO [PC_Sales_Staging_dtw].[dbo].[dim_customer] (
+    [First_Name],
+    [Last_Name],
+    [Contact_Number],
+    [Email_Address],
+    [Credit_Score],
+    [Priority]
+)
+SELECT DISTINCT
+    [Customer_Name],
     [Customer_Surname],
     [Customer_Contact_Number],
     [Customer_Email_Address],
-    [Sales_Person_Name],
-    [Sales_Person_Department]
-FROM
-    [PC_Sales_Staging_dtw].[dbo].[Raw_PC_Data]
+    [Credit_Score],
+    [Priority]
+FROM [PC_Sales_Staging_dtw].[dbo].[pc_data];
 
--- Verification Query: Display loaded customer dimension records
-SELECT
-    *
-FROM
-    [PC_Sales_Staging_dtw].[dbo].[dim_customer] 
+-- Verification
+SELECT * FROM [PC_Sales_Staging_dtw].[dbo].[dim_customer];
