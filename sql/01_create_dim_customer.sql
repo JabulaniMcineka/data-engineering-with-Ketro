@@ -1,19 +1,19 @@
 /*
 =======================================================
-Script: 1.dim_customer.sql
-Description: Creates and populates dim_customer dimension table
-Purpose: Store customer demographic information
+Script: 01_create_dim_customer.sql
+Description: Creates and populates the dim_customer dimension table
+Purpose: Store customer demographic information in the warehouse
 Author: Data Engineer Jabulani Mcineka
 Date: 2026-05-26
 =======================================================
 */
 
--- Drop and recreate if exists
-IF OBJECT_ID('[PC_Sales_Staging_dtw].[dbo].[dim_customer]', 'U') IS NOT NULL
-    DROP TABLE [PC_Sales_Staging_dtw].[dbo].[dim_customer];
+-- Drop and recreate the table if it already exists
+DROP TABLE IF EXISTS [PC_Sales_Staging_dtw].[dbo].[stg_dim_customer];
+GO
 
-CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[dim_customer] (
-    [Customer_Key]   INT IDENTITY(1,1) PRIMARY KEY,
+CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[stg_dim_customer] (
+    [Customer_Key]   INT IDENTITY(1, 1) PRIMARY KEY,
     [First_Name]     NVARCHAR(50)  NOT NULL,
     [Last_Name]      NVARCHAR(50)  NOT NULL,
     [Contact_Number] NVARCHAR(50)  NOT NULL,
@@ -21,9 +21,10 @@ CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[dim_customer] (
     [Credit_Score]   NVARCHAR(50)  NOT NULL,
     [Priority]       NVARCHAR(50)  NOT NULL
 );
+GO
 
 -- Insert distinct customer records from staging
-INSERT INTO [PC_Sales_Staging_dtw].[dbo].[dim_customer] (
+INSERT INTO [PC_Sales_Staging_dtw].[dbo].[stg_dim_customer] (
     [First_Name],
     [Last_Name],
     [Contact_Number],
@@ -39,6 +40,9 @@ SELECT DISTINCT
     [Credit_Score],
     [Priority]
 FROM [PC_Sales_Staging_dtw].[dbo].[pc_data];
+GO
 
 -- Verification
-SELECT * FROM [PC_Sales_Staging_dtw].[dbo].[dim_customer];
+SELECT TOP 10 *
+FROM [PC_Sales_Staging_dtw].[dbo].[stg_dim_customer];
+GO

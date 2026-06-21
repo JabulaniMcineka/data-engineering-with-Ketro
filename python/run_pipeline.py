@@ -61,7 +61,7 @@ if __name__ == "__main__":
     print("-" * 55)
 
     pipeline_files = [
-        # BASE_DIR / "sql/01_raw_schema.sql",
+        BASE_DIR / "sql/01_raw_schema.sql",
         BASE_DIR / "sql/02_dim_tables.sql",
         BASE_DIR / "sql/03_fact_table.sql",
         BASE_DIR / "sql/04_populate_dims.sql",
