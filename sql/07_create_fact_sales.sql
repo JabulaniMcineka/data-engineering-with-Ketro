@@ -9,10 +9,10 @@ Date: 2026-05-28
 */
 
 -- Drop and recreate the table if it already exists
-DROP TABLE IF EXISTS [PC_Sales_Staging_dtw].[dbo].[dim_fact_sales];
-GO
-
-CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[dim_fact_sales] (
+-- Ensure the target table exists before loading
+IF OBJECT_ID(N'[dbo].[stg_dim_fact_sales]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[stg_dim_fact_sales] (
     [Sales_Key]       INT IDENTITY(1, 1) PRIMARY KEY,
     [Product_Key]     INT NOT NULL,
     [Customer_Key]    INT NOT NULL,
@@ -24,10 +24,15 @@ CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[dim_fact_sales] (
     [Cost_Price]      NVARCHAR(50),
     [Discount_Amount] NVARCHAR(50),
     [Finance_Amount]  NVARCHAR(50)
-);
+)
+END;
 GO
 
-INSERT INTO [PC_Sales_Staging_dtw].[dbo].[dim_fact_sales] (
+-- Clear existing data while preserving the table structure
+TRUNCATE TABLE [dbo].[stg_dim_fact_sales];
+GO
+
+INSERT INTO [PC_Sales_Staging_dtw].[dbo].[stg_dim_fact_sales] (
     [Product_Key],
     [Customer_Key],
     [Shop_Key],
@@ -80,5 +85,5 @@ GO
 
 -- Verification
 SELECT TOP 10 *
-FROM [PC_Sales_Staging_dtw].[dbo].[dim_fact_sales];
+FROM [PC_Sales_Staging_dtw].[dbo].[stg_dim_fact_sales];
 GO
