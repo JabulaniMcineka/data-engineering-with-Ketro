@@ -1,35 +1,39 @@
 /*
 =======================================================
 Script: 02_create_dim_product.sql
-Description: Creates and populates the dim_product table
+Description: Refreshes and populates the dim_product table
 Purpose: Store product-related information in the warehouse
 Author: Data Engineer Jabulani Mcineka
 Date: 2026-05-28
 =======================================================
 */
 
--- Drop and recreate the table if it already exists
-IF OBJECT_ID('[PC_Sales_Staging_dtw].[dbo].[dim_product]', 'U') IS NOT NULL
+USE [PC_Sales_Staging_dtw];
+GO
+
+-- Ensure the target table exists before loading
+IF OBJECT_ID(N'[dbo].[stg_dim_product]', N'U') IS NULL
 BEGIN
-    DROP TABLE [PC_Sales_Staging_dtw].[dbo].[stg_dim_product];
+    CREATE TABLE [dbo].[stg_dim_product] (
+        [Product_Key]      INT IDENTITY(1, 1) PRIMARY KEY,
+        [PC_Name]          NVARCHAR(100) NOT NULL,
+        [PC_Make]          NVARCHAR(50)  NOT NULL,
+        [PC_Model]         NVARCHAR(100) NOT NULL,
+        [Storage_Capacity] NVARCHAR(50)  NOT NULL,
+        [RAM]              NVARCHAR(20)  NOT NULL,
+        [PC_Market_Price]  NVARCHAR(20)  NOT NULL,
+        [Storage_Type]     NVARCHAR(20)  NOT NULL,
+        [Cost_of_Repair]   NVARCHAR(20)  NOT NULL
+    );
 END;
 GO
 
-CREATE TABLE [PC_Sales_Staging_dtw].[dbo].[stg_dim_product] (
-    [Product_Key]      INT IDENTITY(1, 1) PRIMARY KEY,
-    [PC_Name]          NVARCHAR(100) NOT NULL,
-    [PC_Make]          NVARCHAR(50)  NOT NULL,
-    [PC_Model]         NVARCHAR(100) NOT NULL,
-    [Storage_Capacity] NVARCHAR(50)  NOT NULL,
-    [RAM]              NVARCHAR(20)  NOT NULL,
-    [PC_Market_Price]  NVARCHAR(20)  NOT NULL,
-    [Storage_Type]     NVARCHAR(20)  NOT NULL,
-    [Cost_of_Repair]   NVARCHAR(20)  NOT NULL
-);
+-- Clear existing data while preserving the table structure
+TRUNCATE TABLE [dbo].[stg_dim_product];
 GO
 
 -- Insert distinct product records from staging
-INSERT INTO [PC_Sales_Staging_dtw].[dbo].[stg_dim_product] (
+INSERT INTO [dbo].[stg_dim_product] (
     [PC_Name],
     [PC_Make],
     [PC_Model],
@@ -48,10 +52,10 @@ SELECT DISTINCT
     [PC_Market_Price],
     [Storage_Type],
     [Cost_of_Repairs]
-FROM [PC_Sales_Staging_dtw].[dbo].[pc_data];
+FROM [dbo].[pc_data];
 GO
 
 -- Verification
 SELECT TOP 10 *
-FROM [PC_Sales_Staging_dtw].[dbo].[stg_dim_product];
+FROM [dbo].[stg_dim_product];
 GO
