@@ -1,10 +1,10 @@
-USE [PC_Sales_Staging_dtw];
-GO
+USE PC_Data_DB;
+GO  
  
 -- Create the table if it does not exist
-IF OBJECT_ID(N'dbo.pc_data', N'U') IS NULL
+IF OBJECT_ID(N'dbo.raw_pc_data', N'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.pc_data (
+    CREATE TABLE dbo.raw_pc_data (
         Continent                NVARCHAR(50),
         Country_or_State         NVARCHAR(50),
         Province_or_City         NVARCHAR(50),
@@ -39,11 +39,11 @@ END;
 GO
  
 -- Clear existing data
-TRUNCATE TABLE dbo.pc_data;
+TRUNCATE TABLE dbo.raw_pc_data;
 GO
  
 -- Load the CSV
-BULK INSERT dbo.pc_data
+BULK INSERT dbo.raw_pc_data
 FROM 'C:\temp\pc_data.csv'
 WITH (
     FIRSTROW = 2,
@@ -57,6 +57,6 @@ GO
  
 -- Verify the load
 SELECT TOP (5) *
-FROM dbo.pc_data;
+FROM dbo.raw_pc_data;
 GO
  
