@@ -503,6 +503,34 @@ GO
 
 
 
+FROM dbo.stg_pc_data
+WHERE NOT (
+    TRY_CONVERT(date, Ship_Date, 101) IS NOT NULL
+    AND TRY_CONVERT(date, Purchase_Date, 101) IS NOT NULL
+    AND TRY_CONVERT(date, Ship_Date, 101) < TRY_CONVERT(date, Purchase_Date, 101)
+);
+GO
+
+
+-- Flag definitively broken rows (ship before purchase — logically impossible)
+IF OBJECT_ID(N'dbo.DataQuality_DateOrderConflicts', N'U') IS NOT NULL
+    DROP TABLE dbo.DataQuality_DateOrderConflicts;
+GO
+CREATE TABLE dbo.DataQuality_DateOrderConflicts (
+    FlagID INT IDENTITY(1,1) PRIMARY KEY,
+    SalesKey INT,
+    Purchase_Date_Raw NVARCHAR(50),
+    Ship_Date_Raw NVARCHAR(50),
+    FlaggedDate DATETIME DEFAULT GETDATE()
+);
+GO
+INSERT INTO dbo.DataQuality_DateOrderConflicts (SalesKey, Purchase_Date_Raw, Ship_Date_Raw)
+SELECT SalesKey, Purchase_Date, Ship_Date
+FROM [dbo].[stg_pc_data]
+WHERE TRY_CONVERT(date, Ship_Date, 101) < TRY_CONVERT(date, Purchase_Date, 101);
+GO
+
+
 
 ----------------------------------------------------------
 -- 8. Verify results

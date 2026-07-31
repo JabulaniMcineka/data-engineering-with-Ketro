@@ -61,6 +61,17 @@ SELECT
 FROM dbo.raw_pc_data;
 GO
 
+
+--Deleting the first row data which is the header row from the stg_pc_data table
+--as it really does not belong to the data set and is just a header row
+DELETE FROM [dbo].[stg_pc_data]
+WHERE Continent = 'Continent'
+   OR Purchase_Date = 'Purchase Date'
+   OR Purchase_Date = 'Ship Date'
+   OR Ship_Date = 'Ship Date'
+   OR Ship_Date = 'Purchase Date';
+GO
+
 -- Verify
 SELECT COUNT(*) AS staging_row_count FROM dbo.stg_pc_data;
 SELECT TOP (5) * FROM dbo.stg_pc_data;

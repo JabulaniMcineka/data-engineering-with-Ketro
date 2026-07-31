@@ -245,8 +245,11 @@ SELECT
     Cost_Price, Sale_Price, Discount_Amount, Finance_Amount, PC_Market_Price,
     Cost_of_Repairs, Total_Sales_per_Employee, Credit_Score
 FROM ranked
-WHERE rn = 1;
+WHERE rn = 1
+AND Purchase_Date IS NOT NULL
+;
 GO
+
 
 -- ============================================
 -- Sanity checks

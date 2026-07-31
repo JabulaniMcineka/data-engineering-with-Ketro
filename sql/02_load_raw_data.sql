@@ -54,9 +54,15 @@ WITH (
     TABLOCK
 );
 GO
- 
+
+
 -- Verify the load
 SELECT TOP (5) *
+FROM dbo.raw_pc_data;
+GO
+ 
+
+SELECT count(*)
 FROM dbo.raw_pc_data;
 GO
  
