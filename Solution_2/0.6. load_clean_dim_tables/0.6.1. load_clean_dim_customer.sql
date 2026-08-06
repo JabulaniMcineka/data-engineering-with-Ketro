@@ -1,71 +1,94 @@
-use stg_express_db;
+Use clean_express_db;
 GO  
 
--- ============================================
--- Preview raw customer-related columns from the raw data table
--- before staging (sense-check the source data)
--- ============================================
-SELECT [customer_first_name]
-      ,[customer_last_name]
-      ,[customer_email]
-      ,[customer_phone]
-      ,[customer_city]
-      ,[customer_province]
-      ,[customer_loyalty_tier]
-      ,[customer_since]
-FROM [stg_express_db].[dbo].[stg_express_data]
--------------------------------------------------------------------------------------
+TRUNCATE TABLE [clean_express_db].[dbo].[clean_dim_customer];
 
--- ============================================
--- Rebuild the staging customer dimension table from scratch
--- (drop if it exists, then recreate with the target schema)
--- ============================================
-DROP TABLE IF EXISTS [stg_express_db].[dbo].[stg_dim_customer]
+WITH CustomerCTE AS
+(
+    SELECT
 
-USE stg_express_db;
-GO
+        UPPER(LTRIM(RTRIM(customer_first_name))) AS customer_first_name,
 
--- Guard against re-creating the table if it somehow already exists
--- (redundant alongside DROP TABLE IF EXISTS above, but harmless)
-IF OBJECT_ID(N'[stg_express_db].[dbo].[stg_dim_customer]', N'U') IS NULL
-CREATE TABLE [stg_express_db].[dbo].[stg_dim_customer] (
-       [customer_id] INT IDENTITY(1,1) PRIMARY KEY,   -- surrogate key for staging
-       [customer_first_name] VARCHAR(255),
-       [customer_last_name] VARCHAR(255),
-       [customer_email] VARCHAR(255),
-       [customer_phone] INT,                          -- NOTE: phone numbers stored as INT — risky, see below
-       [customer_city] VARCHAR(255),
-       [customer_province] VARCHAR(255),
-       [customer_loyalty_tier] VARCHAR(255),
-       [customer_since] DATETIME2
-       );
-------------------------------------------------------------------------------------------
+        UPPER(LTRIM(RTRIM(customer_last_name))) AS customer_last_name,
 
--- ============================================
--- Load staging table from raw data, deduplicating exact repeated rows
--- ============================================
-INSERT INTO [stg_express_db].[dbo].[stg_dim_customer] (
-[customer_first_name],
-[customer_last_name],
-[customer_email],
-[customer_phone],
-[customer_city],
-[customer_province],
-[customer_loyalty_tier],
-[customer_since]
+        LOWER(LTRIM(RTRIM(ISNULL(customer_email,'')))) AS customer_email,
+
+        LTRIM(RTRIM(ISNULL(customer_phone,''))) AS customer_phone,
+
+        LTRIM(RTRIM(ISNULL(customer_city,''))) AS customer_city,
+
+        LTRIM(RTRIM(ISNULL(customer_province,''))) AS customer_province,
+
+        LTRIM(RTRIM(ISNULL(customer_loyalty_tier,''))) AS customer_loyalty_tier,
+
+        customer_since,
+
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY
+
+                UPPER(LTRIM(RTRIM(customer_first_name))),
+                UPPER(LTRIM(RTRIM(customer_last_name)))
+
+            ORDER BY
+
+                CASE
+                    WHEN customer_email IS NULL
+                         OR LTRIM(RTRIM(customer_email)) = ''
+                    THEN 2
+                    ELSE 1
+                END,
+
+                customer_since
+        ) AS rn
+
+    FROM [stg_express_db].[dbo].[stg_dim_customer]
+
+    WHERE
+
+        customer_first_name IS NOT NULL
+        AND customer_last_name IS NOT NULL
 )
-SELECT DISTINCT [customer_first_name],
-                [customer_last_name],
-                [customer_email],
-                [customer_phone],
-                [customer_city],
-                [customer_province],
-                [customer_loyalty_tier],
-                [customer_since]
-FROM [stg_express_db].[dbo].[stg_express_data]
--------------------------------------------------------------------------------
 
--- ============================================
--- Verify the staging load
--- ============================================
-SELECT * FROM [stg_express_db].[dbo].[stg_dim_customer]
+INSERT INTO [clean_express_db].[dbo].[clean_dim_customer]
+(
+    customer_first_name,
+    customer_last_name,
+    customer_email,
+    customer_phone,
+    customer_city,
+    customer_province,
+    customer_loyalty_tier,
+    customer_since
+)
+
+SELECT
+
+    customer_first_name,
+    customer_last_name,
+    customer_email,
+    customer_phone,
+    customer_city,
+    customer_province,
+    customer_loyalty_tier,
+    customer_since
+
+FROM CustomerCTE C
+
+WHERE rn = 1
+
+AND NOT EXISTS
+(
+    SELECT 1
+    FROM [clean_express_db].[dbo].[clean_dim_customer] D
+
+    WHERE
+
+        D.customer_first_name = C.customer_first_name
+        AND D.customer_last_name = C.customer_last_name
+);
+
+
+-----------------------------------------------------------------------------------
+
+SELECT * FROM [clean_express_db].[dbo].[clean_dim_customer]

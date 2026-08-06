@@ -66,9 +66,9 @@ INNER JOIN [dwh_express_db].[dbo].[dwh_dim_date] DD
 
 ON DD.full_date =
 COALESCE(
-    TRY_CONVERT(date,R.transaction_date,23),   -- ISO: yyyy-mm-dd
-    TRY_CONVERT(date,R.transaction_date,103),  -- British/French: dd/mm/yyyy
-    TRY_PARSE(R.transaction_date AS date USING 'en-GB')  -- fallback via locale parsing
+    TRY_CONVERT(date, R.transaction_date, 23),
+    TRY_CONVERT(date, R.transaction_date, 103),
+    TRY_PARSE(CAST(R.transaction_date AS NVARCHAR(50)) AS date USING 'en-GB')
 )
 
 WHERE NOT EXISTS

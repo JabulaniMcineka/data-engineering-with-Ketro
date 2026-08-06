@@ -1,50 +1,92 @@
-Use stg_express_db;
-GO
-
-SELECT [product_name],
-       [category],
-       [sub_category],
-       [sku],
-       [supplier]
-FROM [stg_express_db].[dbo].[stg_express_data]
-
-  ----------------------------------------------------------------------------------
-
-DROP TABLE IF EXISTS [stg_express_db   ].[dbo].[stg_dim_product]
-
-USE stg_express_db;
+use clean_express_db;
 GO
 
 
-IF OBJECT_ID(N'[stg_express_db].[dbo].[stg_dim_product]', N'U') IS NULL
-CREATE TABLE [stg_express_db].[dbo].[stg_dim_product] (
-       [product_id] INT IDENTITY(1, 1) PRIMARY KEY,
-       [product_name] VARCHAR(255),
-       [category] VARCHAR(255),
-       [sub_category] VARCHAR(255),
-       [sku] VARCHAR(255),
-       [supplier] VARCHAR(255)
+TRUNCATE TABLE [clean_express_db].[dbo].[clean_dim_product]
+GO
+-----------------------------------------------------------------------
 
-       );
+WITH ProductCTE AS
+(
+    SELECT
 
----------------------------------------------------------------------------------------
+        UPPER(LTRIM(RTRIM(product_name))) AS product_name,
 
-INSERT INTO [stg_express_db].[dbo].[stg_dim_product] (
-       [product_name],
-       [category],
-       [sub_category],
-       [sku],
-       [supplier]
+        UPPER(LTRIM(RTRIM(ISNULL(category,'UNKNOWN')))) AS category,
 
+        UPPER(LTRIM(RTRIM(ISNULL(sub_category,'UNKNOWN')))) AS sub_category,
+
+        UPPER(LTRIM(RTRIM(sku))) AS sku,
+
+        UPPER(LTRIM(RTRIM(ISNULL(supplier,'UNKNOWN')))) AS supplier,
+
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY
+                UPPER(LTRIM(RTRIM(sku)))
+
+            ORDER BY
+
+                CASE
+                    WHEN category IS NULL
+                         OR LTRIM(RTRIM(category)) = ''
+                    THEN 2
+                    ELSE 1
+                END,
+
+                CASE
+                    WHEN sub_category IS NULL
+                         OR LTRIM(RTRIM(sub_category)) = ''
+                    THEN 2
+                    ELSE 1
+                END,
+
+                CASE
+                    WHEN supplier IS NULL
+                         OR LTRIM(RTRIM(supplier)) = ''
+                    THEN 2
+                    ELSE 1
+                END,
+
+                UPPER(LTRIM(RTRIM(product_name)))
+        ) AS rn
+
+    FROM [stg_express_db].[dbo].[stg_dim_product]
+
+    WHERE
+        sku IS NOT NULL
 )
 
-SELECT DISTINCT [product_name],
-                [category],
-                [sub_category],
-                [sku],
-                [supplier]
-FROM [stg_express_db].[dbo].[stg_express_data]
+INSERT INTO [clean_express_db].[dbo].[clean_dim_product]
+(
+    product_name,
+    category,
+    sub_category,
+    sku,
+    supplier
+)
 
----------------------------------------------------------------------------------
+SELECT
 
-    SELECT * FROM [stg_express_db].[dbo].[stg_dim_product]
+    product_name,
+    category,
+    sub_category,
+    sku,
+    supplier
+
+FROM ProductCTE P
+
+WHERE rn = 1
+
+AND NOT EXISTS
+(
+    SELECT 1
+    FROM [clean_express_db].[dbo].[clean_dim_product] D
+
+    WHERE D.sku = P.sku
+);
+GO
+
+----------------------------------------------------------------------------
+
+SELECT * FROM [clean_express_db].[dbo].[clean_dim_product]

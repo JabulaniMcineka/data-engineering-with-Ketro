@@ -1,49 +1,49 @@
-use stg_express_db;
-GO
+use clean_express_db;
+Go
 
-SELECT [store_name],
-       [store_city],
-       [store_province],
-       [store_region],
-       [store_manager]
-FROM [stg_express_db].[dbo].[stg_express_data]
+WITH StoreCTE AS
+(
+    SELECT
+        UPPER(LTRIM(RTRIM(store_name))) AS store_name,
+        UPPER(LTRIM(RTRIM(store_city))) AS store_city,
+        UPPER(LTRIM(RTRIM(store_province))) AS store_province,
+        UPPER(LTRIM(RTRIM(store_region))) AS store_region,
+        UPPER(LTRIM(RTRIM(store_manager))) AS store_manager,
 
-----------------------------------------------------------------------------------
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY UPPER(LTRIM(RTRIM(store_name)))
+            ORDER BY UPPER(LTRIM(RTRIM(store_city)))
+        ) AS rn
 
-DROP TABLE IF EXISTS [stg_express_db].[dbo].[stg_dim_store]
-USE stg_express_db;
-GO
-
-
-IF OBJECT_ID(N'[stg_express_db].[dbo].[stg_dim_store]', N'U') IS NULL
-CREATE TABLE [stg_express_db].[dbo].[stg_dim_store] (
-       [store_id] INT IDENTITY(1, 1) PRIMARY KEY,
-       [store_name] VARCHAR(255),
-       [store_city] VARCHAR(255),
-       [store_province] VARCHAR(255),
-       [store_region] VARCHAR(255),
-       [store_manager] VARCHAR(255)
-
-       );
-
-------------------------------------------------------------------------------------------
-
-INSERT INTO [stg_express_db].[dbo].[stg_dim_store] (
-       [store_name],
-       [store_city],
-       [store_province],
-       [store_region],
-       [store_manager]
-
+    FROM [stg_express_db].[dbo].[stg_dim_store]
+    WHERE store_name IS NOT NULL
 )
 
-SELECT DISTINCT    [store_name],
-                   [store_city],
-                   [store_province],
-                   [store_region],
-                   [store_manager]
-FROM [stg_express_db].[dbo].[stg_express_data]
+INSERT INTO [clean_express_db].[dbo].[clean_dim_store]
+(
+    store_name,
+    store_city,
+    store_province,
+    store_region,
+    store_manager
+)
+SELECT
+    store_name,
+    store_city,
+    store_province,
+    store_region,
+    store_manager
+FROM StoreCTE S
+WHERE rn = 1
+AND NOT EXISTS
+(
+    SELECT 1
+    FROM [clean_express_db].[dbo].[clean_dim_store] D
+    WHERE D.store_name = S.store_name
+);
+GO
 
----------------------------------------------------------------------------------
+------------------------------------------------------------------------
 
-    SELECT * FROM [stg_express_db].[dbo].[stg_dim_store]
+SELECT * FROM [clean_express_db].[dbo].[clean_dim_store]
